@@ -3,6 +3,7 @@ Flask-SQLAlchemy==3.0.5
 Flask-JWT-Extended==4.5.2
 Flask-CORS==4.0.0
 Flask-SocketIO==5.3.6
+Flask-Bcrypt==1.0.2
 
 gunicorn==21.2.0
 eventlet==0.33.3
