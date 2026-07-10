@@ -3,6 +3,7 @@ from app.models import User, db
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from sqlalchemy.exc import SQLAlchemyError
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -12,27 +13,35 @@ blacklist = set()
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    
+
     if not data or not data.get('username') or not data.get('password') or not data.get('email'):
         return jsonify({"msg": "Missing required fields"}), 400
-        
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({"msg": "Username already exists"}), 400
-        
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({"msg": "Email already exists"}), 400
-        
-    user = User(
-        username=data['username'],
-        email=data['email'],
-        role=data.get('role', 'user')
-    )
-    user.set_password(data['password'])
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    return jsonify({"msg": "User created successfully"}), 201
+
+    try:
+        db.session.execute(db.text('SELECT 1'))
+    except SQLAlchemyError as exc:
+        return jsonify({"msg": "Database is not ready", "error": str(exc)}), 503
+
+    try:
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({"msg": "Username already exists"}), 400
+
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({"msg": "Email already exists"}), 400
+
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            role=data.get('role', 'user')
+        )
+        user.set_password(data['password'])
+
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({"msg": "User created successfully"}), 201
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return jsonify({"msg": "Database error", "error": str(exc)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -42,12 +51,14 @@ def login():
     if not username or not password:
         return jsonify({"msg": "Missing username or password"}), 400
 
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        # Ensure JWT subject is a string to satisfy PyJWT requirements
-        access_token = create_access_token(identity=str(user.id), additional_claims={"role": user.role}, expires_delta=timedelta(hours=24))
-        return jsonify(access_token=access_token, user_id=user.id, role=user.role, username=user.username), 200
-    return jsonify({"msg": "Bad username or password"}), 401
+    try:
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            access_token = create_access_token(identity=str(user.id), additional_claims={"role": user.role}, expires_delta=timedelta(hours=24))
+            return jsonify(access_token=access_token, user_id=user.id, role=user.role, username=user.username), 200
+        return jsonify({"msg": "Bad username or password"}), 401
+    except SQLAlchemyError as exc:
+        return jsonify({"msg": "Database error", "error": str(exc)}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()

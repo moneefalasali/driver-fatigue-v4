@@ -9,6 +9,7 @@ def init_db():
     try:
         with app.app_context():
             db.create_all()
+            db.session.remove()
     except Exception as exc:
         print(f"Database initialization warning: {exc}")
 
