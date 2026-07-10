@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - نظام مراقبة السائق</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+        .login-card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .login-header img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+        .login-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .login-header p {
+            font-size: 0.9rem;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .login-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        .divider span {
+            background: white;
+            padding: 0 10px;
+            position: relative;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .signup-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb;
+        }
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+        .loading {
+            display: none;
+        }
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/static/icons/logo.png" alt="Logo">
+                <h1>driver-fatigue</h1>
+                <p>نظام ذكي لرصد تعب السائق</p>
+            </div>
+            <div class="login-body">
+                <div class="error-message" id="error-msg"></div>
+                <div class="success-message" id="success-msg"></div>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label class="form-label" for="username">اسم المستخدم أو البريد الإلكتروني</label>
+                        <input type="text" class="form-control" id="username" name="username" required placeholder="أدخل اسم المستخدم">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">كلمة المرور</label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="أدخل كلمة المرور">
+                    </div>
+
+                    <div class="form-group form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">تذكرني</label>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <span class="text">تسجيل الدخول</span>
+                        <span class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> جاري...
+                        </span>
+                    </button>
+                </form>
+
+                <div class="divider">
+                    <span>أو</span>
+                </div>
+
+                <div class="signup-link">
+                    <p>ليس لديك حساب؟ <a href="/register">إنشاء حساب جديد</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const btn = e.target.querySelector('.btn-login');
+            const textSpan = btn.querySelector('.text');
+            const loadingSpan = btn.querySelector('.loading');
+
+            btn.disabled = true;
+            textSpan.style.display = 'none';
+            loadingSpan.style.display = 'inline';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store only the JWT token in localStorage
+                    localStorage.setItem('token', data.access_token);
+
+                    // Token stored in localStorage; backend APIs must be called with Authorization header.
+
+                    document.getElementById('success-msg').textContent = 'تم تسجيل الدخول بنجاح!';
+                    document.getElementById('success-msg').style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = '/monitoring';
+                    }, 1500);
+                } else {
+                    document.getElementById('error-msg').textContent = data.msg || 'فشل تسجيل الدخول';
+                    document.getElementById('error-msg').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('error-msg').textContent = 'حدث خطأ في الاتصال';
+                document.getElementById('error-msg').style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                textSpan.style.display = 'inline';
+                loadingSpan.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

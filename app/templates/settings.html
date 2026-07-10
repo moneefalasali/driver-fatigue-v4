@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-3">
+    <h4 class="mb-4 fw-bold">الإعدادات</h4>
+
+    <!-- Alert Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>إعدادات التنبيهات</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">حساسية التنبيهات</label>
+                <div class="d-flex align-items-center gap-3">
+                    <input type="range" id="alert-sensitivity" class="form-range" min="30" max="90" value="70" step="5">
+                    <span id="sensitivity-value" class="badge bg-primary">70%</span>
+                </div>
+                <small class="text-muted">درجة الإرهاق التي تُطلق التنبيه</small>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="audio-alerts" checked>
+                    <label class="form-check-label" for="audio-alerts">
+                        <i class="fas fa-volume-up me-2"></i>تنبيهات صوتية
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="vibration-alerts" checked>
+                    <label class="form-check-label" for="vibration-alerts">
+                        <i class="fas fa-mobile-alt me-2"></i>تنبيهات اهتزاز
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notification-alerts" checked>
+                    <label class="form-check-label" for="notification-alerts">
+                        <i class="fas fa-bell me-2"></i>إشعارات المتصفح
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-camera me-2"></i>إعدادات الكاميرا</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">دقة الكاميرا</label>
+                <select id="camera-resolution" class="form-select">
+                    <option value="320x240">منخفضة (320x240)</option>
+                    <option value="640x480" selected>متوسطة (640x480)</option>
+                    <option value="1280x720">عالية (1280x720)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">معدل الإطارات (FPS)</label>
+                <input type="number" id="camera-fps" class="form-control" min="15" max="30" value="30">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">الحد الأدنى لثقة الكشف</label>
+                <div class="d-flex align-items-center gap-3">
+                    <input type="range" id="detection-confidence" class="form-range" min="0.3" max="0.9" value="0.5" step="0.1">
+                    <span id="confidence-value" class="badge bg-info">0.5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-user me-2"></i>حساب المستخدم</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم</label>
+                <input type="text" id="username" class="form-control" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">البريد الإلكتروني</label>
+                <input type="email" id="email" class="form-control" disabled>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Management -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-database me-2"></i>إدارة البيانات</h5>
+        </div>
+        <div class="card-body">
+            <button class="btn btn-outline-warning" onclick="exportData()">
+                <i class="fas fa-download me-2"></i>تصدير البيانات
+            </button>
+            
+            <button class="btn btn-outline-danger" onclick="clearAlertHistory()">
+                <i class="fas fa-trash me-2"></i>مسح سجل التنبيهات
+            </button>
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-100" onclick="saveSettings()">
+        <i class="fas fa-save me-2"></i>حفظ الإعدادات
+    </button>
+</div>
+
+<script>
+    // Page protection: require token in localStorage
+    if (!localStorage.getItem('token')) {
+        window.location.href = '/login';
+    }
+
+    async function loadUserInfo() {
+        if (!AuthManager.requireAuth()) return;
+        try {
+            const response = await AuthManager.fetchWithAuth('/api/auth/me');
+            if (!response.ok) throw new Error('Failed to load user info');
+            const data = await response.json();
+            document.getElementById('username').value = data.username;
+            document.getElementById('email').value = data.email;
+        } catch (err) {
+            console.error('Error loading user info:', err);
+        }
+    }
+
+    function loadSettings() {
+        const settings = AlertSystem.config;
+        document.getElementById('alert-sensitivity').value = settings.fatigueThreshold;
+        document.getElementById('sensitivity-value').textContent = settings.fatigueThreshold + '%';
+        document.getElementById('audio-alerts').checked = settings.enableAudio;
+        document.getElementById('vibration-alerts').checked = settings.enableVibration;
+        document.getElementById('notification-alerts').checked = settings.enableNotifications;
+    }
+
+    function saveSettings() {
+        AlertSystem.config.fatigueThreshold = parseInt(document.getElementById('alert-sensitivity').value);
+        AlertSystem.config.enableAudio = document.getElementById('audio-alerts').checked;
+        AlertSystem.config.enableVibration = document.getElementById('vibration-alerts').checked;
+        AlertSystem.config.enableNotifications = document.getElementById('notification-alerts').checked;
+        AlertSystem.saveSettings();
+        alert('تم حفظ الإعدادات بنجاح');
+    }
+
+    document.getElementById('alert-sensitivity')?.addEventListener('input', (e) => {
+        document.getElementById('sensitivity-value').textContent = e.target.value + '%';
+    });
+
+    document.getElementById('detection-confidence')?.addEventListener('input', (e) => {
+        document.getElementById('confidence-value').textContent = e.target.value;
+    });
+
+    function clearAlertHistory() {
+        if (confirm('هل أنت متأكد من رغبتك في مسح سجل التنبيهات؟')) {
+            AlertSystem.clearAlertHistory();
+            alert('تم مسح السجل بنجاح');
+        }
+    }
+
+    function exportData() {
+        const alerts = AlertSystem.getAlertHistory(1000);
+        const dataStr = JSON.stringify(alerts, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `alerts-${new Date().toISOString()}.json`;
+        link.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserInfo();
+        loadSettings();
+    });
+</script>
+{% endblock %}

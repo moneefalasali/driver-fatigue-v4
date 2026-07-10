@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-3">لوحة تحكم المشرف</h4>
+    <div class="list-group">
+        <a href="/admin/users" class="list-group-item list-group-item-action">إدارة المستخدمين</a>
+        <a href="/admin/sessions" class="list-group-item list-group-item-action">إدارة الجلسات</a>
+        <a href="/admin/stats" class="list-group-item list-group-item-action">إحصائيات عامة</a>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Driver Fatigue PWA</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icons/icon-192x192.png">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="نظام ذكي يعتمد على الذكاء الاصطناعي للتنبؤ المبكر بإرهاق السائق">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--light-color);
+            padding-bottom: 70px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            color: var(--dark-color);
+        }
+
+        .card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .nav-item {
+            text-align: center;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.8rem;
+            flex: 1;
+            padding: 10px 0;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .nav-item i {
+            display: block;
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .page {
+            display: none;
+            padding: 15px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            text-align: center;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .btn-round {
+            border-radius: 30px;
+            padding: 10px 25px;
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 4/3;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+            object-fit: cover;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.active {
+            background-color: var(--success-color);
+        }
+
+        .status-indicator.inactive {
+            background-color: #6c757d;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .header-top {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 20px 15px;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header-top h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-top img {
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .stats-card .label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 80px;
+            }
+
+            .header-top h1 {
+                font-size: 1.2rem;
+            }
+
+            .card {
+                margin-bottom: 12px;
+            }
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 75px;
+            left: 15px;
+            right: 15px;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+            display: none;
+            animation: slideUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .install-prompt.show {
+            display: block;
+        }
+
+        /* Make logout nav item very visible */
+        .nav-item#logout-nav {
+            background: linear-gradient(135deg, #ff4d4f 0%, #ff5960 100%);
+            color: #fff !important;
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 6px 20px rgba(255,89,89,0.18);
+            transform: translateY(-8px);
+        }
+        .nav-item#logout-nav i { color: #fff; }
+        .nav-item#logout-nav span { font-weight: 700; }
+
+        /* Header logout button */
+        .header-top .logout-btn {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #ff4d4f 0%, #d9363f 100%);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #ffffff;
+            padding: 0 16px;
+            min-width: 120px;
+            height: 46px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(217, 54, 63, 0.22);
+            font-weight: 700;
+            font-size: 0.95rem;
+            gap: 10px;
+        }
+        .header-top .logout-btn i {
+            color: #ffffff;
+            font-size: 1rem;
+            min-width: 20px;
+        }
+
+        .install-prompt .close-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <script src="/static/js/auth.js"></script>
+    <div id="alert-overlay" class="d-none">
+        <i class="fas fa-exclamation-triangle fa-5x mb-3"></i>
+        <h1>تنبيه: إرهاق شديد!</h1>
+        <p>يرجى التوقف فوراً للراحة</p>
+    </div>
+
+    <div id="install-prompt" class="install-prompt">
+        <button class="close-btn" onclick="this.parentElement.classList.remove('show')">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="text-center">
+            <h5 class="mb-2">تثبيت التطبيق</h5>
+            <p class="small text-muted mb-3">ثبّت التطبيق على جهازك للوصول السريع</p>
+            <button id="install-btn" class="btn btn-primary btn-sm w-100">تثبيت الآن</button>
+        </div>
+    </div>
+
+    <!-- Header with logout button -->
+    <div class="header-top">
+        <h1>نظام مراقبة الإرهاق</h1>
+        <button id="logout-btn" class="logout-btn" title="تسجيل الخروج"><span>خروج</span><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <div id="app-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="/" class="nav-item {{ 'active' if request.path == '/' else '' }}">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="/monitoring" class="nav-item {{ 'active' if request.path == '/monitoring' else '' }}">
+            <i class="fas fa-video"></i>
+            <span>المراقبة</span>
+        </a>
+        <a href="/dashboard" class="nav-item {{ 'active' if request.path == '/dashboard' else '' }}">
+            <i class="fas fa-chart-bar"></i>
+            <span>الإحصائيات</span>
+        </a>
+        <a href="/settings" class="nav-item {{ 'active' if request.path == '/settings' else '' }}">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </a>
+        <!-- logout removed from footer; use header logout only -->
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="/static/js/alerts.js"></script>
+    <script src="/static/js/camera.js"></script>
+    <script src="/static/js/sensors.js"></script>
+    <script src="/static/js/gps.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-prompt').classList.add('show');
+        });
+
+        document.getElementById('install-btn')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                document.getElementById('install-prompt').classList.remove('show');
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+        });
+
+        // Update nav active state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

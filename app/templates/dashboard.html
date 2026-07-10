@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-3">
+    <h4 class="mb-3 fw-bold">لوحة البيانات</h4>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <div class="card p-3">
+                <div class="text-muted small">إجمالي الجلسات</div>
+                <div id="total-sessions" class="h4 fw-bold mb-0">0</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card p-3">
+                <div class="text-muted small">ساعات القيادة</div>
+                <div id="total-hours" class="h4 fw-bold mb-0">0</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card p-3">
+                <div class="text-muted small">عدد التنبيهات</div>
+                <div id="total-alerts" class="h4 fw-bold mb-0 text-danger">0</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card p-3">
+                <div class="text-muted small">متوسط الإرهاق</div>
+                <div id="avg-fatigue" class="h4 fw-bold mb-0 text-primary">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-4">
+        <h6 class="fw-bold mb-3">مستوى الإرهاق الأخير</h6>
+        <div style="height: 200px;">
+            <canvas id="fatigue-chart"></canvas>
+        </div>
+    </div>
+
+    <h6 class="fw-bold mb-3">الجلسات الأخيرة</h6>
+    <div id="sessions-list" class="list-group">
+        <!-- Sessions will be loaded here -->
+        <div class="text-center text-muted py-4">جاري التحميل...</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Page protection: require token in localStorage
+    if (!localStorage.getItem('token')) {
+        window.location.href = '/login';
+    }
+    let statsRefreshInterval;
+    let fatigueChart;
+
+    async function loadStats() {
+        // Require authentication
+        if (!AuthManager.requireAuth()) return;
+
+        try {
+            const response = await AuthManager.fetchWithAuth('/api/stats');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.msg || 'Failed to load stats');
+            }
+
+            const data = await response.json();
+
+            // Update KPI cards
+            document.getElementById('total-sessions').innerText = data.total_sessions ?? 0;
+            document.getElementById('total-hours').innerText = data.total_hours ?? 0;
+            document.getElementById('total-alerts').innerText = data.total_alerts ?? 0;
+            document.getElementById('avg-fatigue').innerText = `${data.avg_fatigue ?? 0}%`;
+
+            // Render chart
+            if (data.recent_fatigue && data.recent_fatigue.length > 0) {
+                renderChart(data.recent_fatigue);
+            } else {
+                renderChart([]);
+            }
+
+            // Render sessions
+            if (data.recent_sessions && data.recent_sessions.length > 0) {
+                renderSessions(data.recent_sessions);
+            } else {
+                renderSessions([]);
+            }
+        } catch (err) {
+            console.error('Error loading stats:', err);
+            const list = document.getElementById('sessions-list');
+            list.innerHTML = '<div class="text-center text-danger py-4">تعذر تحميل البيانات الآن</div>';
+        }
+    }
+
+    function renderChart(data) {
+        const canvas = document.getElementById('fatigue-chart');
+        const ctx = canvas.getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (fatigueChart) {
+            fatigueChart.destroy();
+        }
+
+        if (!data || data.length === 0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('لا توجد بيانات إرهاق بعد', canvas.width / 2, canvas.height / 2);
+            return;
+        }
+
+        fatigueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.time),
+                datasets: [{
+                    label: 'مستوى الإرهاق',
+                    data: data.map(d => d.score),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    x: {
+                        display: false,
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderSessions(sessions) {
+        const list = document.getElementById('sessions-list');
+        if (!sessions || sessions.length === 0) {
+            list.innerHTML = '<div class="text-center text-muted py-4">لا توجد جلسات مسجلة بعد</div>';
+            return;
+        }
+        
+        list.innerHTML = sessions.map(s => {
+            const fatigueColor = s.fatigue_avg >= 70 ? 'danger' : (s.fatigue_avg >= 30 ? 'warning' : 'success');
+            return `
+                <div class="list-group-item border-0 card mb-2 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">${new Date(s.start_time).toLocaleDateString('ar-EG')}</div>
+                            <div class="small text-muted">${new Date(s.start_time).toLocaleTimeString('ar-EG')}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-light text-dark mb-2">${s.duration} دقيقة</div>
+                            <div class="text-${fatigueColor} fw-bold">${s.fatigue_avg}% إرهاق</div>
+                            <div class="small text-muted">${s.alerts_count} تنبيه</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load stats immediately
+        loadStats();
+        
+        // Refresh stats every 30 seconds
+        statsRefreshInterval = setInterval(loadStats, 30000);
+    });
+
+    // Clean up interval on page unload
+    window.addEventListener('beforeunload', () => {
+        if (statsRefreshInterval) {
+            clearInterval(statsRefreshInterval);
+        }
+        if (fatigueChart) {
+            fatigueChart.destroy();
+        }
+    });
+</script>
+{% endblock %}

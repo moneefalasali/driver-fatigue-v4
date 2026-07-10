@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <div class="card shadow-sm p-5 mb-4">
+            <h1 class="display-5 fw-bold mb-4">مرحباً بك driver-fatigue</h1>
+            <p class="lead mb-4">نظام ذكي يعتمد على الذكاء الاصطناعي للتنبؤ المبكر بإرهاق السائق وحمايته من الحوادث.</p>
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="/monitoring" class="btn btn-primary btn-lg px-4 gap-3">ابدأ المراقبة الآن</a>
+                <a href="/dashboard" class="btn btn-outline-secondary btn-lg px-4">عرض الإحصائيات</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="h5">تحليل الوجه</h3>
+                <p class="text-muted small">مراقبة حركة العينين وتعبيرات الوجه لاكتشاف علامات النعاس.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="h5">مستشعرات الحركة</h3>
+                <p class="text-muted small">تحليل حركات الجوال المفاجئة وغير الطبيعية أثناء القيادة.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="h5">تنبيهات فورية</h3>
+                <p class="text-muted small">إصدار تنبيهات صوتية واهتزازات عند اكتشاف خطر الإرهاق.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

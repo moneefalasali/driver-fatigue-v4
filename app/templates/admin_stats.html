@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-3">إحصائيات النظام</h4>
+    <div id="admin-stats" class="row g-3">
+        <div class="col-3">
+            <div class="card p-3">
+                <div class="text-muted small">عدد المستخدمين</div>
+                <div id="user-count" class="h4 fw-bold">0</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card p-3">
+                <div class="text-muted small">عدد الجلسات</div>
+                <div id="session-count" class="h4 fw-bold">0</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card p-3">
+                <div class="text-muted small">إجمالي التنبيهات</div>
+                <div id="total-alerts" class="h4 fw-bold text-danger">0</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card p-3">
+                <div class="text-muted small">متوسط الإرهاق</div>
+                <div id="avg-fatigue" class="h4 fw-bold">0%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/admin.js"></script>
+{% endblock %}
