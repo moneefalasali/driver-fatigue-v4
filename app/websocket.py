@@ -7,14 +7,10 @@ import base64
 import cv2
 import numpy as np
 from app.models import Session, FatigueData
-from app.ai.cnn_model import EyeClassifier
-from app.ai.lstm_model import SequenceAnalyzer
 from app.ai.meta_model import FatigueMetaModel
 from app.ai.utils import calculate_ear, calculate_head_pose, FatigueTracker
 
-# Initialize models
-eye_classifier = EyeClassifier()
-sequence_analyzer = SequenceAnalyzer()
+# Initialize lightweight helpers only when needed to avoid expensive imports during startup.
 meta_model = FatigueMetaModel()
 
 # Store session info per socket ID
