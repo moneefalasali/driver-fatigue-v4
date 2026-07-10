@@ -92,4 +92,7 @@ def create_app(config_class=Config):
     return app
 
 
-__all__ = ['create_app', 'db', 'jwt', 'socketio']
+app = create_app()
+
+
+__all__ = ['create_app', 'db', 'jwt', 'socketio', 'app']
