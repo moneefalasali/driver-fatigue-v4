@@ -89,6 +89,15 @@ def create_app(config_class=Config):
             response.headers['X-Reissued-Token'] = g.reissued_token
         return response
 
+    # Ensure the database schema exists on startup so auth routes can work
+    # immediately when PostgreSQL is configured.
+    with app.app_context():
+        try:
+            db.create_all()
+            db.session.remove()
+        except Exception as exc:
+            app.logger.warning("Database initialization skipped or failed: %s", exc)
+
     return app
 
 
