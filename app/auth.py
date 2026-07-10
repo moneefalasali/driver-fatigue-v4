@@ -10,17 +10,40 @@ auth_bp = Blueprint('auth', __name__)
 # Simple blacklist for logout (in memory for now, should be Redis in production)
 blacklist = set()
 
+
+def _ensure_database_ready():
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        return True
+    except SQLAlchemyError:
+        try:
+            db.create_all()
+            db.session.execute(db.text('SELECT 1'))
+            return True
+        except Exception:
+            return False
+
+
+def _safe_rollback():
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    try:
+        db.session.remove()
+    except Exception:
+        pass
+
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
     if not data or not data.get('username') or not data.get('password') or not data.get('email'):
         return jsonify({"msg": "Missing required fields"}), 400
 
-    try:
-        db.session.execute(db.text('SELECT 1'))
-    except SQLAlchemyError as exc:
-        return jsonify({"msg": "Database is not ready", "error": str(exc)}), 503
+    if not _ensure_database_ready():
+        return jsonify({"msg": "Database is not ready"}), 503
 
     try:
         if User.query.filter_by(username=data['username']).first():
@@ -40,16 +63,22 @@ def register():
         db.session.commit()
         return jsonify({"msg": "User created successfully"}), 201
     except SQLAlchemyError as exc:
-        db.session.rollback()
+        _safe_rollback()
+        return jsonify({"msg": "Database error", "error": str(exc)}), 500
+    except Exception as exc:
+        _safe_rollback()
         return jsonify({"msg": "Database error", "error": str(exc)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     username = data.get('username')
     password = data.get('password')
     if not username or not password:
         return jsonify({"msg": "Missing username or password"}), 400
+
+    if not _ensure_database_ready():
+        return jsonify({"msg": "Database is not ready"}), 503
 
     try:
         user = User.query.filter_by(username=username).first()
@@ -58,6 +87,10 @@ def login():
             return jsonify(access_token=access_token, user_id=user.id, role=user.role, username=user.username), 200
         return jsonify({"msg": "Bad username or password"}), 401
     except SQLAlchemyError as exc:
+        _safe_rollback()
+        return jsonify({"msg": "Database error", "error": str(exc)}), 500
+    except Exception as exc:
+        _safe_rollback()
         return jsonify({"msg": "Database error", "error": str(exc)}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
@@ -69,6 +102,9 @@ def logout():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_me():
+    if not _ensure_database_ready():
+        return jsonify({"msg": "Database is not ready"}), 503
+
     identity = get_jwt_identity()
     claims = get_jwt()
     # Stored identity is a string; convert to int for DB lookup
