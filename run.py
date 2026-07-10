@@ -5,11 +5,18 @@ import os
 app = create_app()
 
 
-def main():
-    # Ensure DB tables are created within the application context
-    with app.app_context():
-        db.create_all()
+def init_db():
+    try:
+        with app.app_context():
+            db.create_all()
+    except Exception as exc:
+        print(f"Database initialization warning: {exc}")
 
+
+init_db()
+
+
+def main():
     # Run the SocketIO server and print the URL to the console
     host = os.environ.get('FLASK_RUN_HOST', '0.0.0.0')
     port = int(os.environ.get('FLASK_RUN_PORT', 5000))
