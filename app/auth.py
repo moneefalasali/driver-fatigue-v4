@@ -3,6 +3,7 @@ from app.models import User, db
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 auth_bp = Blueprint('auth', __name__)
@@ -13,12 +14,19 @@ blacklist = set()
 
 def _ensure_database_ready():
     try:
-        db.session.execute(db.text('SELECT 1'))
+        with db.engine.connect() as connection:
+            connection.execute(text('SELECT 1'))
         return True
-    except SQLAlchemyError:
+    except Exception:
+        try:
+            db.session.remove()
+            db.engine.dispose()
+        except Exception:
+            pass
         try:
             db.create_all()
-            db.session.execute(db.text('SELECT 1'))
+            with db.engine.connect() as connection:
+                connection.execute(text('SELECT 1'))
             return True
         except Exception:
             return False
@@ -31,6 +39,10 @@ def _safe_rollback():
         pass
     try:
         db.session.remove()
+    except Exception:
+        pass
+    try:
+        db.engine.dispose()
     except Exception:
         pass
 
